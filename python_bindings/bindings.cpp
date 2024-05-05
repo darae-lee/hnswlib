@@ -696,6 +696,11 @@ class Index {
                 free_when_done_d));
     }
 
+    // new
+    void customFunction(size_t label) {
+        appr_alg->customFunction(label);
+    }
+
 
     void markDeleted(size_t label) {
         appr_alg->markDelete(label);
