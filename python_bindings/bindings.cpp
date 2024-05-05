@@ -698,7 +698,8 @@ class Index {
 
     // new
     void customFunction(size_t label) {
-        appr_alg->customFunction(label);
+        printf("%d\n", label);
+        appr_alg->customFunction(label); 
     }
 
     void markDeleted(size_t label) {
