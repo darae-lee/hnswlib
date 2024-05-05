@@ -1071,14 +1071,14 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
     // new
-    std::pair<tableint, tableint> getAllNeighbors(tableint internalId){
-        std::pair<tableint, tableint> unique_neighbors;
+    std::pair<unsigned int, unsigned int> getAllNeighbors(tableint internalId){
+        std::pair<unsigned int, unsigned int> unique_neighbors;
         // retrieve the level of the node
         int node_level = element_levels_[internalId];
 
         // Step 3: Collect all neighbors across all levels
         for (int level = 0; level <= node_level; ++level) {
-            auto neighbors = getConnectionsWithLock(internal_id, level);
+            auto neighbors = getConnectionsWithLock(internalId, level);
             unique_neighbors.push_back(neighbors.begin(), neighbors.end());
         }
         return unique_neighbors;
