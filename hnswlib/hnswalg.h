@@ -1076,9 +1076,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         labeltype label
     ) {
         printf("custom function\n");
+        fflush(stdout);
         std::vector<float> dataPoint = getDataByLabel<float>(label);
         markDelete(label);
         printf("datapoint %d\n", dataPoint);
+        fflush(stdout);
         const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
 
         // const float *dataPoint = getDataByLabel<float>(label);
@@ -1087,10 +1089,13 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
         // lock all operations with element by label
         printf("1");
+        fflush(stdout);
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
         printf("2");
+        fflush(stdout);
         std::unique_lock <std::mutex> lock_table(label_lookup_lock);
         printf("3");
+        fflush(stdout);
         auto search = label_lookup_.find(label);
         if (search == label_lookup_.end()) {
             throw std::runtime_error("Label not found");
@@ -1110,10 +1115,13 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                     changed = false;
                     unsigned int *data;
                     printf("lock?");
+                    fflush(stdout);
                     std::unique_lock <std::mutex> lock(link_list_locks_[currObj]);
                     printf("after lock");
+                    fflush(stdout);
                     data = get_linklist_at_level(currObj, level);
                     printf("data %d\n", data);
+                    fflush(stdout);
                     int size = getListCount(data);
                     tableint *datal = (tableint *) (data + 1);
 #ifdef USE_SSE
@@ -1127,6 +1135,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 //                         updatePoint(getDataByInternalId(cand), cand, 1.0);
 //                     }
                     printf("datal %d\n", datal);
+                    fflush(stdout);
                     addItems(datal);
                     // void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
 
