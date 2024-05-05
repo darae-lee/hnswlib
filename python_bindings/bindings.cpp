@@ -697,9 +697,8 @@ class Index {
     }
 
     // new
-    void customFunction(size_t label) {
-        printf("%d\n", label);
-        appr_alg->customFunction(label); 
+    void customDelete(size_t label) {
+        appr_alg->customDelete(label); 
     }
 
     void markDeleted(size_t label) {
@@ -950,7 +949,7 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("path_to_index"),
             py::arg("max_elements") = 0,
             py::arg("allow_replace_deleted") = false)
-        .def("custom_function", &Index<float>::customFunction, py::arg("label"))
+        .def("custom_delete", &Index<float>::customDelete, py::arg("label"))
         .def("mark_deleted", &Index<float>::markDeleted, py::arg("label"))
         .def("unmark_deleted", &Index<float>::unmarkDeleted, py::arg("label"))
         .def("resize_index", &Index<float>::resizeIndex, py::arg("new_size"))

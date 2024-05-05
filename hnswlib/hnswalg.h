@@ -1071,71 +1071,40 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
     // new
-    void customFunction(
-        labeltype label
-    ) {
-        cout << "Hello World" << endl;
-        std::vector<float> dataPoint = getDataByLabel<float>(label);
+    void customDelete(labeltype label){
+        // (1) mark the element with the given label as deleted
         markDelete(label);
-        cout << dataPoint << endl;
-        const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
 
-        // const float *dataPoint = getDataByLabel<float>(label);
-        int maxLevelCopy = maxlevel_;
-        tableint entryPointCopy = enterpoint_node_;
-
-        // lock all operations with element by label
-        cout << "Hello World" << endl;
-        fflush(stdout);
-        std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
-        cout << "Hello World" << endl;
-        fflush(stdout);
-        std::unique_lock <std::mutex> lock_table(label_lookup_lock);
-        cout << "Hello World" << endl;
-        fflush(stdout);
-        auto search = label_lookup_.find(label);
-        if (search == label_lookup_.end()) {
+        // (2) retrieve the internal ID of the element from the label lookup
+        std::unique_lock<std::mutex> lock_table(label_lookup_lock);
+        auto it = label_lookup_.find(label);
+        if (it == label_lookup_.end()) {
             throw std::runtime_error("Label not found");
         }
-        tableint internalId = search->second;
+        tableint internal_id = it->second;
         lock_table.unlock();
 
-        int elemLevel = element_levels_[internalId];
+        // retrieve the level of the node
+        int node_level = element_levels_[internal_id];
 
-        // from repairConnectionsForUpdate
-        tableint currObj = entryPointCopy;
-        if (elemLevel < maxLevelCopy) {
-            dist_t curdist = fstdistfunc_(dataPointer, getDataByInternalId(currObj), dist_func_param_);
-            for (int level = maxLevelCopy; level > elemLevel; level--) {
-                bool changed = true;
-                while (changed) {
-                    changed = false;
-                    unsigned int *data;
-                    cout << "lock" << endl;
-                    std::unique_lock <std::mutex> lock(link_list_locks_[currObj]);
-                    cout << "lock" << endl;
-                    data = get_linklist_at_level(currObj, level);
-                    cout << data << endl;
-                    int size = getListCount(data);
-                    tableint *datal = (tableint *) (data + 1);
-#ifdef USE_SSE
-                    _mm_prefetch(getDataByInternalId(*datal), _MM_HINT_T0);
-#endif
-//                     for (int i = 0; i < size; i++) {
-// #ifdef USE_SSE
-//                         _mm_prefetch(getDataByInternalId(*(datal + i + 1)), _MM_HINT_T0);
-// #endif
-//                         tableint cand = datal[i];
-//                         updatePoint(getDataByInternalId(cand), cand, 1.0);
-//                     }
-                    cout << "final" << endl;
-                    addItems(datal);
-                    // void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
-
-                }
-            }
+        // Step 3: Collect all neighbors across all levels
+        std::unordered_set<tableint> unique_neighbors;
+        for (int level = 0; level <= node_level; ++level) {
+            auto neighbors = getConnectionsWithLock(internal_id, level);
+            unique_neighbors.insert(neighbors.begin(), neighbors.end());
         }
 
+        // Step 4: Reinsert the neighbors back into the graph
+        for (auto neighbor_id : unique_neighbors) {
+            const void *neighbor_data = getDataByInternalId(neighbor_id);
+            labeltype neighbor_label = getExternalLabel(neighbor_id);
+            
+            // Mark the neighbor as deleted first to remove old connections
+            markDeletedInternal(neighbor_id);
+            
+            // Reinsert by adding the point again
+            addPoint(neighbor_data, neighbor_label, element_levels_[neighbor_id]);
+        }
     }
 
     void repairConnectionsForUpdate(
