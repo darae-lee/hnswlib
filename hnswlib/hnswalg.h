@@ -1070,6 +1070,55 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
     }
 
+    // new
+    void customFunction(
+        labeltype label
+    ) {
+        const void *dataPoint = getDataByLabel(label);
+        int maxLevelCopy = maxlevel_;
+        tableint entryPointCopy = enterpoint_node_;
+
+        // lock all operations with element by label
+        std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
+
+        std::unique_lock <std::mutex> lock_table(label_lookup_lock);
+        auto search = label_lookup_.find(label);
+        if (search == label_lookup_.end()) {
+            throw std::runtime_error("Label not found");
+        }
+        tableint internalId = search->second;
+        lock_table.unlock();
+
+        int elemLevel = element_levels_[internalId];
+
+        // from repairConnectionsForUpdate
+        tableint currObj = entryPointInternalId;
+        if (dataPointLevel < maxLevel) {
+            dist_t curdist = fstdistfunc_(dataPoint, getDataByInternalId(currObj), dist_func_param_);
+            for (int level = maxLevel; level > dataPointLevel; level--) {
+                bool changed = true;
+                while (changed) {
+                    changed = false;
+                    unsigned int *data;
+                    std::unique_lock <std::mutex> lock(link_list_locks_[currObj]);
+                    data = get_linklist_at_level(currObj, level);
+                    int size = getListCount(data);
+                    tableint *datal = (tableint *) (data + 1);
+#ifdef USE_SSE
+                    _mm_prefetch(getDataByInternalId(*datal), _MM_HINT_T0);
+#endif
+                    for (int i = 0; i < size; i++) {
+#ifdef USE_SSE
+                        _mm_prefetch(getDataByInternalId(*(datal + i + 1)), _MM_HINT_T0);
+#endif
+                        tableint cand = datal[i];
+                        updatePoint(getDataByInternalId(cand), cand, 1.0);
+                    }
+                }
+            }
+        }
+
+    }
 
     void repairConnectionsForUpdate(
         const void *dataPoint,
