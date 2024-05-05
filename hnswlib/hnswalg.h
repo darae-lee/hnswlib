@@ -1075,6 +1075,8 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         labeltype label
     ) {
         std::vector<float> dataPoint = getDataByLabel<float>(label);
+        const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
+
         // const float *dataPoint = getDataByLabel<float>(label);
         int maxLevelCopy = maxlevel_;
         tableint entryPointCopy = enterpoint_node_;
@@ -1095,7 +1097,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         // from repairConnectionsForUpdate
         tableint currObj = entryPointCopy;
         if (elemLevel < maxLevelCopy) {
-            dist_t curdist = fstdistfunc_(dataPoint, getDataByInternalId(currObj), dist_func_param_);
+            dist_t curdist = fstdistfunc_(dataPointer, getDataByInternalId(currObj), dist_func_param_);
             for (int level = maxLevelCopy; level > elemLevel; level--) {
                 bool changed = true;
                 while (changed) {
