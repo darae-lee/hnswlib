@@ -959,7 +959,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         // lock all operations with element by label
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
         if (!replace_deleted) {
-            printf("%d %d\n", data_point, label);
             addPoint(data_point, label, -1);
             return;
         }
@@ -1075,12 +1074,10 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     void customFunction(
         labeltype label
     ) {
-        printf("custom function\n");
-        fflush(stdout);
+        cout << "Hello World" << endl;
         std::vector<float> dataPoint = getDataByLabel<float>(label);
         markDelete(label);
-        printf("datapoint %d\n", dataPoint);
-        fflush(stdout);
+        cout << dataPoint << endl;
         const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
 
         // const float *dataPoint = getDataByLabel<float>(label);
@@ -1088,13 +1085,13 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         tableint entryPointCopy = enterpoint_node_;
 
         // lock all operations with element by label
-        printf("1");
+        cout << "Hello World" << endl;
         fflush(stdout);
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
-        printf("2");
+        cout << "Hello World" << endl;
         fflush(stdout);
         std::unique_lock <std::mutex> lock_table(label_lookup_lock);
-        printf("3");
+        cout << "Hello World" << endl;
         fflush(stdout);
         auto search = label_lookup_.find(label);
         if (search == label_lookup_.end()) {
@@ -1114,14 +1111,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 while (changed) {
                     changed = false;
                     unsigned int *data;
-                    printf("lock?");
-                    fflush(stdout);
+                    cout << "lock" << endl;
                     std::unique_lock <std::mutex> lock(link_list_locks_[currObj]);
-                    printf("after lock");
-                    fflush(stdout);
+                    cout << "lock" << endl;
                     data = get_linklist_at_level(currObj, level);
-                    printf("data %d\n", data);
-                    fflush(stdout);
+                    cout << data << endl;
                     int size = getListCount(data);
                     tableint *datal = (tableint *) (data + 1);
 #ifdef USE_SSE
@@ -1134,8 +1128,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 //                         tableint cand = datal[i];
 //                         updatePoint(getDataByInternalId(cand), cand, 1.0);
 //                     }
-                    printf("datal %d\n", datal);
-                    fflush(stdout);
+                    cout << "final" << endl;
                     addItems(datal);
                     // void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
 
