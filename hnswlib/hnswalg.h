@@ -1071,6 +1071,35 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
     // new
+    std::unordered_set<tableint> getAllNeighbors(tableint internalId){
+        // retrieve the level of the node
+        int node_level = element_levels_[internal_id];
+
+        // Step 3: Collect all neighbors across all levels
+        std::unordered_set<tableint> unique_neighbors;
+        for (int level = 0; level <= node_level; ++level) {
+            auto neighbors = getConnectionsWithLock(internal_id, level);
+            unique_neighbors.insert(neighbors.begin(), neighbors.end());
+        }
+        return unique_neighbors
+    }
+
+    tableint getInternalIdByLabel(labeltype label){
+        // (2) retrieve the internal ID of the element from the label lookup
+        std::unique_lock<std::mutex> lock_table(label_lookup_lock);
+        auto it = label_lookup_.find(label);
+        if (it == label_lookup_.end()) {
+            throw std::runtime_error("Label not found");
+        }
+        tableint internal_id = it->second;
+        lock_table.unlock();
+
+        return internal_id
+    }
+    int getElementLevel(tableint internalId){
+        return element_levels_[internalId];
+    }
+    // new
     void customDelete(labeltype label){
         // (1) mark the element with the given label as deleted
         markDelete(label);

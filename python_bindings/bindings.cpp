@@ -696,10 +696,41 @@ class Index {
                 free_when_done_d));
     }
 
+    // // new
+    // void customDelete(size_t label) {
+    //     appr_alg->customDelete(label); 
+    // }
     // new
     void customDelete(size_t label) {
-        appr_alg->customDelete(label); 
+        // Step 1: Mark the element with the given label as deleted
+        appr_alg->markDelete(label);
+
+        // Step 2: Retrieve the internal ID of the element from the label lookup
+        auto internal_id = appr_alg->getInternalIdByLabel(label);
+        if (internal_id == -1) {
+            throw std::runtime_error("Label not found");
+        }
+
+        // Step 3: Collect all neighbors across all levels
+        auto neighbors = appr_alg->getAllNeighbors(internal_id);
+
+        ParallelFor(0, neighbors.size(), num_threads, )
+
+        // Step 4: Reinsert the neighbors back into the graph in parallel
+        py::gil_scoped_release release; // Release Python GIL if in a Python extension
+        ParallelFor(0, neighbors.size(), num_threads, [&](size_t i, size_t threadId) {
+            const auto& neighbor = neighbors[i];
+            const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+            size_t neighbor_label = appr_alg->getLabelByInternalId(neighbor);
+
+            // Mark the neighbor as deleted first to clear old connections
+            appr_alg->markDeletedInternal(neighbor);
+
+            // Reinsert by adding the point again
+            appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+        });
     }
+
 
     void markDeleted(size_t label) {
         appr_alg->markDelete(label);
