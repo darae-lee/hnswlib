@@ -1111,13 +1111,15 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 #ifdef USE_SSE
                     _mm_prefetch(getDataByInternalId(*datal), _MM_HINT_T0);
 #endif
-                    for (int i = 0; i < size; i++) {
-#ifdef USE_SSE
-                        _mm_prefetch(getDataByInternalId(*(datal + i + 1)), _MM_HINT_T0);
-#endif
-                        tableint cand = datal[i];
-                        updatePoint(getDataByInternalId(cand), cand, 1.0);
-                    }
+                    // addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false)
+                    addItems(datal);
+//                     for (int i = 0; i < size; i++) {
+// #ifdef USE_SSE
+//                         _mm_prefetch(getDataByInternalId(*(datal + i + 1)), _MM_HINT_T0);
+// #endif
+//                         tableint cand = datal[i];
+//                         updatePoint(getDataByInternalId(cand), cand, 1.0);
+//                     }
                 }
             }
         }
