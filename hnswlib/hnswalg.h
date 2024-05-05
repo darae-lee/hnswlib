@@ -1077,6 +1077,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         printf("custom function\n");
         std::vector<float> dataPoint = getDataByLabel<float>(label);
         markDelete(label);
+        printf("datapoint %d\n", dataPoint);
         const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
 
         // const float *dataPoint = getDataByLabel<float>(label);
@@ -1084,9 +1085,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         tableint entryPointCopy = enterpoint_node_;
 
         // lock all operations with element by label
+        printf("1");
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
-
+        printf("2");
         std::unique_lock <std::mutex> lock_table(label_lookup_lock);
+        printf("3");
         auto search = label_lookup_.find(label);
         if (search == label_lookup_.end()) {
             throw std::runtime_error("Label not found");
