@@ -1071,15 +1071,15 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
     // new
-    std::unordered_set<tableint> getAllNeighbors(tableint internalId){
+    std::pair<tableint, tableint> getAllNeighbors(tableint internalId){
+        std::pair<tableint, tableint> unique_neighbors;
         // retrieve the level of the node
         int node_level = element_levels_[internalId];
 
         // Step 3: Collect all neighbors across all levels
-        std::unordered_set<tableint> unique_neighbors;
         for (int level = 0; level <= node_level; ++level) {
             auto neighbors = getConnectionsWithLock(internal_id, level);
-            unique_neighbors.insert(neighbors.begin(), neighbors.end());
+            unique_neighbors.push_back(neighbors.begin(), neighbors.end());
         }
         return unique_neighbors;
     }
@@ -1329,8 +1329,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             maxlevel_ = curlevel;
         }
 
-        // new
-        unsigned int *data = get_linklist_at_level();
         return cur_c;
     }
 

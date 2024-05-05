@@ -712,7 +712,8 @@ class Index {
         }
 
         // Step 3: Collect all neighbors across all levels
-        auto neighbors = appr_alg->getAllNeighbors(internal_id);
+        std::pair<tableint, tableint> neighbors = appr_alg->getAllNeighbors(internal_id);
+        // auto neighbors = appr_alg->getAllNeighbors(internal_id);
 
         // Step 4: Reinsert the neighbors back into the graph in parallel
         py::gil_scoped_release release; // Release Python GIL if in a Python extension
