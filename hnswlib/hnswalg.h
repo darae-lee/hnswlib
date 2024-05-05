@@ -959,6 +959,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         // lock all operations with element by label
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
         if (!replace_deleted) {
+            printf("%d %d\n", data_point, label);
             addPoint(data_point, label, -1);
             return;
         }
