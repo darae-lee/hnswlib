@@ -1092,7 +1092,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         int elemLevel = element_levels_[internalId];
 
         // from repairConnectionsForUpdate
-        tableint currObj = entryPointInternalId;
+        tableint currObj = entryPointCopy;
         if (dataPointLevel < maxLevel) {
             dist_t curdist = fstdistfunc_(dataPoint, getDataByInternalId(currObj), dist_func_param_);
             for (int level = maxLevel; level > dataPointLevel; level--) {
