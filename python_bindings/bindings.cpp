@@ -701,7 +701,6 @@ class Index {
         appr_alg->customFunction(label);
     }
 
-
     void markDeleted(size_t label) {
         appr_alg->markDelete(label);
     }
