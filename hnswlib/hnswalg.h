@@ -1074,7 +1074,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     void customFunction(
         labeltype label
     ) {
-        const void *dataPoint = getDataByLabel(label);
+        const void *dataPoint = getDataByLabel<float>(label);
         int maxLevelCopy = maxlevel_;
         tableint entryPointCopy = enterpoint_node_;
 
