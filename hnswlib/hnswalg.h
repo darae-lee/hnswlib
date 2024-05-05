@@ -1074,6 +1074,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     void customFunction(
         labeltype label
     ) {
+        printf("custom function\n");
         std::vector<float> dataPoint = getDataByLabel<float>(label);
         markDelete(label);
         const void *dataPointer = reinterpret_cast<const void *>(dataPoint.data());
