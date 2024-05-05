@@ -1104,8 +1104,11 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 while (changed) {
                     changed = false;
                     unsigned int *data;
+                    printf("lock?");
                     std::unique_lock <std::mutex> lock(link_list_locks_[currObj]);
+                    printf("after lock");
                     data = get_linklist_at_level(currObj, level);
+                    printf("data %d\n", data);
                     int size = getListCount(data);
                     tableint *datal = (tableint *) (data + 1);
 #ifdef USE_SSE
@@ -1118,7 +1121,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 //                         tableint cand = datal[i];
 //                         updatePoint(getDataByInternalId(cand), cand, 1.0);
 //                     }
-                    print(datal);
+                    printf("datal %d\n", datal);
                     addItems(datal);
                     // void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
 
@@ -1320,6 +1323,9 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             enterpoint_node_ = cur_c;
             maxlevel_ = curlevel;
         }
+
+        // new
+        unsigned int *data = get_linklist_at_level()
         return cur_c;
     }
 
