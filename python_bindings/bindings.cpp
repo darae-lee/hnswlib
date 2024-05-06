@@ -725,6 +725,9 @@ class Index {
                 appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
             }
         });
+        for (size_t label: labels) {
+            appr_alg->removePoint(label);
+        }
     }
 
     void customDelete(size_t label) {
