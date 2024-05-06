@@ -721,14 +721,19 @@ class Index {
             auto it = neighbors.begin();
             std::advance(it, idx);
             auto neighbor = *it;
-            const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
-            size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
+            if(!appr_alg->isMarkedDeleted(neighbor)){
+                const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+                size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
+                appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+            }
+            // const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+            // size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
-            // Mark the neighbor as deleted first to clear old connections
-            appr_alg->markDeletedInternal(neighbor);
+            // // Mark the neighbor as deleted first to clear old connections
+            // appr_alg->markDeletedInternal(neighbor);
 
-            // Reinsert by adding the point again
-            appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+            // // Reinsert by adding the point again
+            // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
         });
     }
 
