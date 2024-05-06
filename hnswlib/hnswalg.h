@@ -1071,17 +1071,22 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
     // new
-    std::pair<unsigned int, unsigned int> getAllNeighbors(tableint internalId){
-        std::pair<unsigned int, unsigned int> unique_neighbors;
-        // retrieve the level of the node
-        int node_level = element_levels_[internalId];
+    std::unordered_set<tableint> getAllNeighbors(tableint internal_id) {
+        std::unordered_set<tableint> neighbors;
+        int node_level = element_levels_[internal_id];
 
-        // Step 3: Collect all neighbors across all levels
         for (int level = 0; level <= node_level; ++level) {
-            auto neighbors = getConnectionsWithLock(internalId, level);
-            unique_neighbors.push_back(neighbors.begin(), neighbors.end());
+            linklistsizeint *link_list = get_linklist_at_level(internal_id, level);
+            size_t num_neighbors = getListCount(link_list);
+            tableint *data = (tableint *)(link_list + 1);
+
+            for (size_t i = 0; i < num_neighbors; i++) {
+                tableint neighbor_id = data[i];
+                neighbors.insert(neighbor_id);
+            }
         }
-        return unique_neighbors;
+
+        return neighbors;
     }
 
     tableint getInternalIdByLabel(labeltype label){

@@ -712,7 +712,7 @@ class Index {
         }
 
         // Step 3: Collect all neighbors across all levels
-        std::pair<unsigned int, unsigned int> neighbors = appr_alg->getAllNeighbors(internal_id);
+        auto neighbors = appr_alg->getAllNeighbors(internal_id);
         // auto neighbors = appr_alg->getAllNeighbors(internal_id);
 
         // Step 4: Reinsert the neighbors back into the graph in parallel
