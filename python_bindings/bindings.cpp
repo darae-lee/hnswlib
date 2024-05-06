@@ -703,7 +703,7 @@ class Index {
     // new
     void customDelete(size_t label) {
         // Step 1: Mark the element with the given label as deleted
-        appr_alg->markDelete(label);
+        // appr_alg->markDelete(label);
 
         // Step 2: Retrieve the internal ID of the element from the label lookup
         auto internal_id = appr_alg->getInternalIdByLabel(label);
@@ -725,12 +725,10 @@ class Index {
             size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
             // Mark the neighbor as deleted first to clear old connections
-            if(!appr_alg->isMarkedDeleted(neighbor)){
-                appr_alg->markDeletedInternal(neighbor);
+            appr_alg->markDeletedInternal(neighbor);
 
-                // Reinsert by adding the point again
-                appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
-            }
+            // Reinsert by adding the point again
+            appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
         });
     }
 
