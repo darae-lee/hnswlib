@@ -696,11 +696,37 @@ class Index {
                 free_when_done_d));
     }
 
-    // // new
-    // void customDelete(size_t label) {
-    //     appr_alg->customDelete(label); 
-    // }
-    // new
+    // new - batch-level
+    void customDeletes(const std::vector<size_t>& labels) {
+        std::unordered_set<tableint> all_neighbors;
+
+        for (size_t label: labels) {
+            auto internal_id = appr_alg->getInternalIdByLabel(label);
+            if (internal_id == -1) {
+                throw std::runtime_error("Label not found");
+            }
+            appr_alg->markDelete(label);
+            auto neighbors = appr_alg->getAllNeighbors(internal_id);
+            all_neighbors.insert(neighbors.begin(), neighbors.end());
+        }
+
+        for (size_t label : ids) {
+            all_neighbors.erase(appr_alg->getInternalIdByLabel(label));
+        }
+
+        py::gil_scoped_release release; // Release Python GIL if in a Python extension
+        std::vector<tableint> unique_neighbors(all_neighbors.begin(), all_neighbors.end());
+        ParallelFor(0, unique_neighbors.size(), 16, [&](size_t idx, size_t threadId) {
+            tableint neighbor = unique_neighbors[idx];
+            if (!appr_alg->isMarkedDeleted(neighbor)) {
+                const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+                size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
+
+                appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+            }
+        });
+    }
+
     void customDelete(size_t label) {
         // Step 1: Mark the element with the given label as deleted
         // appr_alg->markDelete(label);
@@ -987,6 +1013,7 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("max_elements") = 0,
             py::arg("allow_replace_deleted") = false)
         .def("custom_delete", &Index<float>::customDelete, py::arg("label"))
+        .def("custom_deletes", &Index<float>::customDeletes, py::arg("labels"))
         .def("mark_deleted", &Index<float>::markDeleted, py::arg("label"))
         .def("unmark_deleted", &Index<float>::unmarkDeleted, py::arg("label"))
         .def("resize_index", &Index<float>::resizeIndex, py::arg("new_size"))
