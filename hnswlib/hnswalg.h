@@ -174,7 +174,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         ef_ = ef;
     }
 
-
     inline std::mutex& getLabelOpMutex(labeltype label) const {
         // calculate hash
         size_t lock_id = label & (MAX_LABEL_OPERATION_LOCKS - 1);
@@ -953,6 +952,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     * If replacement of deleted elements is enabled: replaces previously deleted point if any, updating it with new point
     */
     void addPoint(const void *data_point, labeltype label, bool replace_deleted = false) {
+        std::cout << "maxlevel: " << maxlevel_ << std::endl;
         if ((allow_replace_deleted_ == false) && (replace_deleted == true)) {
             throw std::runtime_error("Replacement of deleted elements is disabled in constructor");
         }
