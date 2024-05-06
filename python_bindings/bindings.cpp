@@ -717,8 +717,10 @@ class Index {
 
         // Step 4: Reinsert the neighbors back into the graph in parallel
         py::gil_scoped_release release; // Release Python GIL if in a Python extension
-        ParallelFor(0, neighbors.size(), 16, [&](size_t i, size_t threadId) {
-            const auto& neighbor = neighbors[i];
+        ParallelFor(0, neighbors.size(), 16, [&](size_t idx, size_t threadId) {
+            auto it = neighbors.begin();
+            std::advance(it, idx);
+            auto neighbor = *it;
             const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
             size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
