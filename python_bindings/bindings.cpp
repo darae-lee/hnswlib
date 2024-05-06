@@ -725,10 +725,12 @@ class Index {
             size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
             // Mark the neighbor as deleted first to clear old connections
-            appr_alg->markDeletedInternal(neighbor);
+            if(!appr_alg->isMarkedDeleted(neighbor)){
+                appr_alg->markDeletedInternal(neighbor);
 
-            // Reinsert by adding the point again
-            appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+                // Reinsert by adding the point again
+                appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+            }
         });
     }
 
