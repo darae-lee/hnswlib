@@ -952,7 +952,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     * If replacement of deleted elements is enabled: replaces previously deleted point if any, updating it with new point
     */
     void addPoint(const void *data_point, labeltype label, bool replace_deleted = false) {
-        std::cout << "maxlevel: " << maxlevel_ << std::endl;
         if ((allow_replace_deleted_ == false) && (replace_deleted == true)) {
             throw std::runtime_error("Replacement of deleted elements is disabled in constructor");
         }
@@ -1327,12 +1326,14 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             // Do nothing for the first element
             enterpoint_node_ = 0;
             maxlevel_ = curlevel;
+            std::cout << "maxlevel: " << maxlevel_ << std::endl;
         }
 
         // Releasing lock for the maximum level
         if (curlevel > maxlevelcopy) {
             enterpoint_node_ = cur_c;
             maxlevel_ = curlevel;
+            std::cout << "maxlevel: " << maxlevel_ << std::endl;
         }
 
         return cur_c;
