@@ -442,7 +442,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
     void getNeighborsByHeuristic2(
         std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> &top_candidates,
-        const size_t Mz) {
+        const size_t M) {
         if (top_candidates.size() < M) {
             return;
         }
