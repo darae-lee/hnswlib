@@ -698,7 +698,7 @@ class Index {
 
     // new - batch-level
     void customDeletes(const std::vector<size_t>& labels) {
-        std::unordered_set<tableint> all_neighbors;
+        std::unordered_set<hnswlib::tableint> all_neighbors;
 
         for (size_t label: labels) {
             auto internal_id = appr_alg->getInternalIdByLabel(label);
@@ -710,14 +710,14 @@ class Index {
             all_neighbors.insert(neighbors.begin(), neighbors.end());
         }
 
-        for (size_t label : ids) {
+        for (size_t label : labels) {
             all_neighbors.erase(appr_alg->getInternalIdByLabel(label));
         }
 
         py::gil_scoped_release release; // Release Python GIL if in a Python extension
-        std::vector<tableint> unique_neighbors(all_neighbors.begin(), all_neighbors.end());
+        std::vector<hnswlib::tableint> unique_neighbors(all_neighbors.begin(), all_neighbors.end());
         ParallelFor(0, unique_neighbors.size(), 16, [&](size_t idx, size_t threadId) {
-            tableint neighbor = unique_neighbors[idx];
+            hnswlib::tableint neighbor = unique_neighbors[idx];
             if (!appr_alg->isMarkedDeleted(neighbor)) {
                 const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
