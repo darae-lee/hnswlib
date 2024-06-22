@@ -712,7 +712,6 @@ class Index {
 
         for (size_t label : labels) {
             all_neighbors.erase(appr_alg->getInternalIdByLabel(label));
-            appr_alg->markDeleted(label);
         }
 
         py::gil_scoped_release release; // Release Python GIL if in a Python extension
