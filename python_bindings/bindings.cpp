@@ -723,7 +723,7 @@ class Index {
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
                 // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
-                appr_alg->updatePoint(neighbor_data, neighbor_label, 1.0);
+                appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
             }
         });
     }
