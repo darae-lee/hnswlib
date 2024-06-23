@@ -699,9 +699,8 @@ class Index {
     // new - batch-level
     void customDeletes(const std::vector<size_t>& labels, int num_threads = -1) {
 
-        if(num_threads < 0){
+        if(num_threads <= 0)
             num_threads = num_threads_default;
-        }
 
         std::unordered_set<hnswlib::tableint> all_neighbors;
 
@@ -728,6 +727,7 @@ class Index {
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
                 // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+                // appr_alg->customupdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label));
                 appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
             }
         });

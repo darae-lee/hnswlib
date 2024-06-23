@@ -1112,9 +1112,10 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 for (auto&& cand : sCand) {
                     if (cand == neigh)
                         continue;
-                    if (isMarkedDeleted(cand))
+                    if (isMarkedDeleted(cand)) {
                         std::cout << "deleted one" << std::endl; // for debuging
                         continue;
+                    }
 
                     dist_t distance = fstdistfunc_(getDataByInternalId(neigh), getDataByInternalId(cand), dist_func_param_);
                     if (candidates.size() < elementsToKeep) {
