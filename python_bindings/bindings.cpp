@@ -727,8 +727,8 @@ class Index {
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
                 // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
-                // appr_alg->customupdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label));
-                appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
+                appr_alg->customupdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label));
+                // appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
             }
         });
     }
@@ -1019,7 +1019,10 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("max_elements") = 0,
             py::arg("allow_replace_deleted") = false)
         .def("custom_delete", &Index<float>::customDelete, py::arg("label"))
-        .def("custom_deletes", &Index<float>::customDeletes, py::arg("labels"))
+        .def("custom_deletes",
+            &Index<float>::customDeletes,
+            py::arg("labels"),
+            py::arg("num_threads") = -1)
         .def("mark_deleted", &Index<float>::markDeleted, py::arg("label"))
         .def("unmark_deleted", &Index<float>::unmarkDeleted, py::arg("label"))
         .def("resize_index", &Index<float>::resizeIndex, py::arg("new_size"))
