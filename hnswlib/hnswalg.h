@@ -1110,7 +1110,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             size_t elementsToKeep = std::min(ef_construction_, size); // size L
             for (auto&& cand : sCand) {
                 if (cand == internalId)
-                    continue
+                    continue;
                 dist_t distance = fstdistfunc_(getDataByInternalId(internalId), getDataByInternalId(cand), dist_func_param_);
                 if (candidates.size() < elementsToKeep) {
                     candidates.emplace(distance, cand);
@@ -1126,9 +1126,9 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_);
 
             {
-                std::unique_lock <std::mutex> lock(link_list_locks_[neigh]);
+                std::unique_lock <std::mutex> lock(link_list_locks_[internalId]);
                 linklistsizeint *ll_cur;
-                ll_cur = get_linklist_at_level(neigh, layer);
+                ll_cur = get_linklist_at_level(internalId, layer);
                 size_t candSize = candidates.size();
                 setListCount(ll_cur, candSize);
                 tableint *data = (tableint *) (ll_cur + 1);
@@ -1138,7 +1138,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 }
             }
         }
-        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
+        repairConnectionsForUpdate(neighborPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
     }
 
 
