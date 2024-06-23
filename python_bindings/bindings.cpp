@@ -248,7 +248,7 @@ class Index {
     }
 
 
-    void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
+    void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false, float alpha=1.0) {
         py::array_t < dist_t, py::array::c_style | py::array::forcecast > items(input);
         auto buffer = items.request();
         if (num_threads <= 0)
@@ -277,7 +277,7 @@ class Index {
                     normalize_vector(vector_data, norm_array.data());
                     vector_data = norm_array.data();
                 }
-                appr_alg->addPoint((void*)vector_data, (size_t)id, replace_deleted);
+                appr_alg->addPoint((void*)vector_data, (size_t)id, replace_deleted, alpha);
                 start = 1;
                 ep_added = true;
             }
@@ -286,7 +286,7 @@ class Index {
             if (normalize == false) {
                 ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
                     size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-                    appr_alg->addPoint((void*)items.data(row), (size_t)id, replace_deleted);
+                    appr_alg->addPoint((void*)items.data(row), (size_t)id, replace_deleted, alpha);
                     });
             } else {
                 std::vector<float> norm_array(num_threads * dim);
@@ -296,7 +296,7 @@ class Index {
                     normalize_vector((float*)items.data(row), (norm_array.data() + start_idx));
 
                     size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-                    appr_alg->addPoint((void*)(norm_array.data() + start_idx), (size_t)id, replace_deleted);
+                    appr_alg->addPoint((void*)(norm_array.data() + start_idx), (size_t)id, replace_deleted, alpha);
                     });
             }
             cur_l += rows;
@@ -697,7 +697,7 @@ class Index {
     }
 
     // new - batch-level
-    void customDeletes(const std::vector<size_t>& labels, int num_threads = -1) {
+    void customDeletes(const std::vector<size_t>& labels, int num_threads = -1, float alpha=1.0) {
 
         if(num_threads <= 0)
             num_threads = num_threads_default;
@@ -727,7 +727,7 @@ class Index {
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
                 // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
-                appr_alg->customUpdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label));
+                appr_alg->customUpdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), alpha);
                 // appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
             }
         });
@@ -1006,7 +1006,8 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("data"),
             py::arg("ids") = py::none(),
             py::arg("num_threads") = -1,
-            py::arg("replace_deleted") = false)
+            py::arg("replace_deleted") = false,
+            py::arg("alpha") = 1.0)
         .def("get_items", &Index<float>::getData, py::arg("ids") = py::none(), py::arg("return_type") = "numpy")
         .def("get_ids_list", &Index<float>::getIdsList)
         .def("set_ef", &Index<float>::set_ef, py::arg("ef"))
@@ -1022,7 +1023,8 @@ PYBIND11_PLUGIN(hnswlib) {
         .def("custom_deletes",
             &Index<float>::customDeletes,
             py::arg("labels"),
-            py::arg("num_threads") = -1)
+            py::arg("num_threads") = -1,
+            py::arg("alpha") = 1.0)
         .def("mark_deleted", &Index<float>::markDeleted, py::arg("label"))
         .def("unmark_deleted", &Index<float>::unmarkDeleted, py::arg("label"))
         .def("resize_index", &Index<float>::resizeIndex, py::arg("new_size"))

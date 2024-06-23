@@ -441,12 +441,12 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
 
     void getNeighborsByHeuristic2(
         std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> &top_candidates,
-        const size_t M) {
+        const size_t M,
+        float alpha = 1.0) {
         if (top_candidates.size() < M) {
             return;
         }
 
-        float alpha = 1.0;
         std::priority_queue<std::pair<dist_t, tableint>> queue_closest;
         std::vector<std::pair<dist_t, tableint>> return_list;
         while (top_candidates.size() > 0) {
@@ -508,9 +508,10 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         tableint cur_c,
         std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> &top_candidates,
         int level,
-        bool isUpdate) {
+        bool isUpdate,
+        float alpha = 1.0) {
         size_t Mcurmax = level ? maxM_ : maxM0_;
-        getNeighborsByHeuristic2(top_candidates, M_);
+        getNeighborsByHeuristic2(top_candidates, M_, alpha);
         if (top_candidates.size() > M_)
             throw std::runtime_error("Should be not be more than M_ candidates returned by the heuristic");
 
@@ -600,7 +601,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                                                 dist_func_param_), data[j]);
                     }
 
-                    getNeighborsByHeuristic2(candidates, Mcurmax);
+                    getNeighborsByHeuristic2(candidates, Mcurmax, alpha);
 
                     int indx = 0;
                     while (candidates.size() > 0) {
@@ -951,7 +952,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     * Adds point. Updates the point if it is already in the index.
     * If replacement of deleted elements is enabled: replaces previously deleted point if any, updating it with new point
     */
-    void addPoint(const void *data_point, labeltype label, bool replace_deleted = false) {
+    void addPoint(const void *data_point, labeltype label, bool replace_deleted = false, float alpha=1.0) {
         if ((allow_replace_deleted_ == false) && (replace_deleted == true)) {
             throw std::runtime_error("Replacement of deleted elements is disabled in constructor");
         }
@@ -959,7 +960,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         // lock all operations with element by label
         std::unique_lock <std::mutex> lock_label(getLabelOpMutex(label));
         if (!replace_deleted) {
-            addPoint(data_point, label, -1);
+            addPoint(data_point, label, -1, alpha);
             return;
         }
         // check if there is vacant place
@@ -975,7 +976,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         // if there is no vacant place then add or update point
         // else add point to vacant place
         if (!is_vacant_place) {
-            addPoint(data_point, label, -1);
+            addPoint(data_point, label, -1, alpha);
         } else {
             // we assume that there are no concurrent operations on deleted element
             labeltype label_replaced = getExternalLabel(internal_id_replaced);
@@ -992,7 +993,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
 
-    void updatePoint(const void *dataPoint, tableint internalId, float updateNeighborProbability) {
+    void updatePoint(const void *dataPoint, tableint internalId, float updateNeighborProbability, float alpha = 1.0) {
         // update the feature vector associated with existing point with new vector
         memcpy(getDataByInternalId(internalId), dataPoint, data_size_);
 
@@ -1050,7 +1051,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 }
 
                 // Retrieve neighbours using heuristic and set connections.
-                getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_);
+                getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_, alpha);
 
                 {
                     std::unique_lock <std::mutex> lock(link_list_locks_[neigh]);
@@ -1067,12 +1068,12 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             }
         }
 
-        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
+        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy, alpha);
     }
 
     // new : updatePoint custom version (neighborPoint, neighbor's internal id)
     // update neighborPoint's neighbor
-    void customUpdatePoint(const void *neighborPoint, tableint internalId) {
+    void customUpdatePoint(const void *neighborPoint, tableint internalId, float alpha=1.0) {
         int maxLevelCopy = maxlevel_;
         tableint entryPointCopy = enterpoint_node_;
 
@@ -1123,7 +1124,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             }
 
             // Retrieve neighbours using heuristic and set connections.
-            getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_);
+            getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_, alpha);
 
             {
                 std::unique_lock <std::mutex> lock(link_list_locks_[internalId]);
@@ -1138,12 +1139,12 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 }
             }
         }
-        repairConnectionsForUpdate(neighborPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
+        repairConnectionsForUpdate(neighborPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy, alpha);
     }
 
 
     // new : updatePoint custom version
-    void customupdatePoint(const void *dataPoint, tableint internalId) {
+    void customupdatePoint(const void *dataPoint, tableint internalId, float alpha=1.0) {
         // update the feature vector associated with existing point with new vector
         memcpy(getDataByInternalId(internalId), dataPoint, data_size_);
 
@@ -1200,7 +1201,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                 }
 
                 // Retrieve neighbours using heuristic and set connections.
-                getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_);
+                getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_, alpha);
 
                 {
                     std::unique_lock <std::mutex> lock(link_list_locks_[neigh]);
@@ -1217,7 +1218,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             }
         }
 
-        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
+        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy, alpha);
     }
 
     // new
@@ -1254,49 +1255,14 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     int getElementLevel(tableint internalId){
         return element_levels_[internalId];
     }
-    // new
-    void customDelete(labeltype label){
-        // (1) mark the element with the given label as deleted
-        markDelete(label);
-
-        // (2) retrieve the internal ID of the element from the label lookup
-        std::unique_lock<std::mutex> lock_table(label_lookup_lock);
-        auto it = label_lookup_.find(label);
-        if (it == label_lookup_.end()) {
-            throw std::runtime_error("Label not found");
-        }
-        tableint internal_id = it->second;
-        lock_table.unlock();
-
-        // retrieve the level of the node
-        int node_level = element_levels_[internal_id];
-
-        // Step 3: Collect all neighbors across all levels
-        std::unordered_set<tableint> unique_neighbors;
-        for (int level = 0; level <= node_level; ++level) {
-            auto neighbors = getConnectionsWithLock(internal_id, level);
-            unique_neighbors.insert(neighbors.begin(), neighbors.end());
-        }
-
-        // Step 4: Reinsert the neighbors back into the graph
-        for (auto neighbor_id : unique_neighbors) {
-            const void *neighbor_data = getDataByInternalId(neighbor_id);
-            labeltype neighbor_label = getExternalLabel(neighbor_id);
-            
-            // Mark the neighbor as deleted first to remove old connections
-            markDeletedInternal(neighbor_id);
-            
-            // Reinsert by adding the point again
-            addPoint(neighbor_data, neighbor_label, element_levels_[neighbor_id]);
-        }
-    }
 
     void repairConnectionsForUpdate(
         const void *dataPoint,
         tableint entryPointInternalId,
         tableint dataPointInternalId,
         int dataPointLevel,
-        int maxLevel) {
+        int maxLevel,
+        float alpha=1.0) {
         tableint currObj = entryPointInternalId;
         if (dataPointLevel < maxLevel) {
             dist_t curdist = fstdistfunc_(dataPoint, getDataByInternalId(currObj), dist_func_param_);
@@ -1353,7 +1319,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                         filteredTopCandidates.pop();
                 }
 
-                currObj = mutuallyConnectNewElement(dataPoint, dataPointInternalId, filteredTopCandidates, level, true);
+                currObj = mutuallyConnectNewElement(dataPoint, dataPointInternalId, filteredTopCandidates, level, true, alpha);
             }
         }
     }
@@ -1370,7 +1336,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
     }
 
 
-    tableint addPoint(const void *data_point, labeltype label, int level) {
+    tableint addPoint(const void *data_point, labeltype label, int level, float alpha=1.0) {
         tableint cur_c = 0;
         {
             // Checking if the element with the same label already exists
@@ -1470,7 +1436,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                     if (top_candidates.size() > ef_construction_)
                         top_candidates.pop();
                 }
-                currObj = mutuallyConnectNewElement(data_point, cur_c, top_candidates, level, false);
+                currObj = mutuallyConnectNewElement(data_point, cur_c, top_candidates, level, false, alpha);
             }
         } else {
             // Do nothing for the first element
