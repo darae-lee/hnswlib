@@ -1070,6 +1070,84 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
         repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
     }
 
+    // new : updatePoint custom version
+    void customupdatePoint(const void *dataPoint, tableint internalId) {
+        // update the feature vector associated with existing point with new vector
+        memcpy(getDataByInternalId(internalId), dataPoint, data_size_);
+
+        int maxLevelCopy = maxlevel_;
+        tableint entryPointCopy = enterpoint_node_;
+        // If point to be updated is entry point and graph just contains single element then just return.
+        if (entryPointCopy == internalId && cur_element_count == 1)
+            return;
+
+        int elemLevel = element_levels_[internalId];
+        for (int layer = 0; layer <= elemLevel; layer++) {
+            std::unordered_set<tableint> sCand;
+            std::unordered_set<tableint> sNeigh;
+            std::vector<tableint> listOneHop = getConnectionsWithLock(internalId, layer);
+            if (listOneHop.size() == 0)
+                continue;
+
+            sCand.insert(internalId);
+
+            for (auto&& elOneHop : listOneHop) {
+                sCand.insert(elOneHop);
+
+                sNeigh.insert(elOneHop);
+
+                std::vector<tableint> listTwoHop = getConnectionsWithLock(elOneHop, layer);
+                for (auto&& elTwoHop : listTwoHop) {
+                    sCand.insert(elTwoHop);
+                }
+            }
+
+            for (auto&& neigh : sNeigh) {
+                // if (neigh == internalId)
+                //     continue;
+
+                std::priority_queue<std::pair<dist_t, tableint>, std::vector<std::pair<dist_t, tableint>>, CompareByFirst> candidates;
+                size_t size = sCand.find(neigh) == sCand.end() ? sCand.size() : sCand.size() - 1;  // sCand guaranteed to have size >= 1
+                size_t elementsToKeep = std::min(ef_construction_, size);
+                for (auto&& cand : sCand) {
+                    if (cand == neigh)
+                        continue;
+                    if (isMarkedDeleted(cand))
+                        std::cout << "deleted one" << std::endl; // for debuging
+                        continue;
+
+                    dist_t distance = fstdistfunc_(getDataByInternalId(neigh), getDataByInternalId(cand), dist_func_param_);
+                    if (candidates.size() < elementsToKeep) {
+                        candidates.emplace(distance, cand);
+                    } else {
+                        if (distance < candidates.top().first) {
+                            candidates.pop();
+                            candidates.emplace(distance, cand);
+                        }
+                    }
+                }
+
+                // Retrieve neighbours using heuristic and set connections.
+                getNeighborsByHeuristic2(candidates, layer == 0 ? maxM0_ : maxM_);
+
+                {
+                    std::unique_lock <std::mutex> lock(link_list_locks_[neigh]);
+                    linklistsizeint *ll_cur;
+                    ll_cur = get_linklist_at_level(neigh, layer);
+                    size_t candSize = candidates.size();
+                    setListCount(ll_cur, candSize);
+                    tableint *data = (tableint *) (ll_cur + 1);
+                    for (size_t idx = 0; idx < candSize; idx++) {
+                        data[idx] = candidates.top().second;
+                        candidates.pop();
+                    }
+                }
+            }
+        }
+
+        repairConnectionsForUpdate(dataPoint, entryPointCopy, internalId, elemLevel, maxLevelCopy);
+    }
+
     // new
     std::unordered_set<tableint> getAllNeighbors(tableint internal_id) {
         std::unordered_set<tableint> neighbors;
