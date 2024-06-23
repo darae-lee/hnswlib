@@ -248,7 +248,7 @@ class Index {
     }
 
 
-    void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false, float alpha=1.0) {
+    void addItems(py::object input, py::object ids_ = py::none(), int num_threads = -1, bool replace_deleted = false) {
         py::array_t < dist_t, py::array::c_style | py::array::forcecast > items(input);
         auto buffer = items.request();
         if (num_threads <= 0)
@@ -277,7 +277,7 @@ class Index {
                     normalize_vector(vector_data, norm_array.data());
                     vector_data = norm_array.data();
                 }
-                appr_alg->addPoint((void*)vector_data, (size_t)id, replace_deleted, alpha);
+                appr_alg->addPoint((void*)vector_data, (size_t)id, replace_deleted);
                 start = 1;
                 ep_added = true;
             }
@@ -286,7 +286,7 @@ class Index {
             if (normalize == false) {
                 ParallelFor(start, rows, num_threads, [&](size_t row, size_t threadId) {
                     size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-                    appr_alg->addPoint((void*)items.data(row), (size_t)id, replace_deleted, alpha);
+                    appr_alg->addPoint((void*)items.data(row), (size_t)id, replace_deleted);
                     });
             } else {
                 std::vector<float> norm_array(num_threads * dim);
@@ -296,7 +296,7 @@ class Index {
                     normalize_vector((float*)items.data(row), (norm_array.data() + start_idx));
 
                     size_t id = ids.size() ? ids.at(row) : (cur_l + row);
-                    appr_alg->addPoint((void*)(norm_array.data() + start_idx), (size_t)id, replace_deleted, alpha);
+                    appr_alg->addPoint((void*)(norm_array.data() + start_idx), (size_t)id, replace_deleted);
                     });
             }
             cur_l += rows;
@@ -697,7 +697,7 @@ class Index {
     }
 
     // new - batch-level
-    void customDeletes(const std::vector<size_t>& labels, int num_threads = -1, float alpha=1.0) {
+    void customDeletes(const std::vector<size_t>& labels, int num_threads = -1) {
 
         if(num_threads <= 0)
             num_threads = num_threads_default;
@@ -727,11 +727,48 @@ class Index {
                 size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
 
                 // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
-                appr_alg->customUpdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), alpha);
+                appr_alg->customUpdatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label));
                 // appr_alg->updatePoint(neighbor_data, appr_alg->getInternalIdByLabel(neighbor_label), 1.0);
             }
         });
     }
+
+    void customDelete(size_t label) {
+        // Step 1: Mark the element with the given label as deleted
+        // appr_alg->markDelete(label);
+
+        // Step 2: Retrieve the internal ID of the element from the label lookup
+        auto internal_id = appr_alg->getInternalIdByLabel(label);
+        if (internal_id == -1) {
+            throw std::runtime_error("Label not found");
+        }
+
+        // Step 3: Collect all neighbors across all levels
+        auto neighbors = appr_alg->getAllNeighbors(internal_id);
+        // auto neighbors = appr_alg->getAllNeighbors(internal_id);
+
+        // Step 4: Reinsert the neighbors back into the graph in parallel
+        py::gil_scoped_release release; // Release Python GIL if in a Python extension
+        ParallelFor(0, neighbors.size(), 16, [&](size_t idx, size_t threadId) {
+            auto it = neighbors.begin();
+            std::advance(it, idx);
+            auto neighbor = *it;
+            if(!appr_alg->isMarkedDeleted(neighbor)){
+                const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+                size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
+                appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+            }
+            // const void *neighbor_data = appr_alg->getDataByInternalId(neighbor);
+            // size_t neighbor_label = appr_alg->getExternalLabel(neighbor);
+
+            // // Mark the neighbor as deleted first to clear old connections
+            // appr_alg->markDeletedInternal(neighbor);
+
+            // // Reinsert by adding the point again
+            // appr_alg->addPoint(neighbor_data, neighbor_label, appr_alg->getElementLevel(neighbor));
+        });
+    }
+
 
     void markDeleted(size_t label) {
         appr_alg->markDelete(label);
@@ -969,8 +1006,7 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("data"),
             py::arg("ids") = py::none(),
             py::arg("num_threads") = -1,
-            py::arg("replace_deleted") = false,
-            py::arg("alpha") = 1.0)
+            py::arg("replace_deleted") = false)
         .def("get_items", &Index<float>::getData, py::arg("ids") = py::none(), py::arg("return_type") = "numpy")
         .def("get_ids_list", &Index<float>::getIdsList)
         .def("set_ef", &Index<float>::set_ef, py::arg("ef"))
@@ -982,11 +1018,11 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("path_to_index"),
             py::arg("max_elements") = 0,
             py::arg("allow_replace_deleted") = false)
+        .def("custom_delete", &Index<float>::customDelete, py::arg("label"))
         .def("custom_deletes",
             &Index<float>::customDeletes,
             py::arg("labels"),
-            py::arg("num_threads") = -1,
-            py::arg("alpha") = 1.0)
+            py::arg("num_threads") = -1)
         .def("mark_deleted", &Index<float>::markDeleted, py::arg("label"))
         .def("unmark_deleted", &Index<float>::unmarkDeleted, py::arg("label"))
         .def("resize_index", &Index<float>::resizeIndex, py::arg("new_size"))
