@@ -982,7 +982,6 @@ PYBIND11_PLUGIN(hnswlib) {
             py::arg("path_to_index"),
             py::arg("max_elements") = 0,
             py::arg("allow_replace_deleted") = false)
-        .def("custom_delete", &Index<float>::customDelete, py::arg("label"))
         .def("custom_deletes",
             &Index<float>::customDeletes,
             py::arg("labels"),
