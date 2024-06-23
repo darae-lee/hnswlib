@@ -1113,7 +1113,6 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
                     if (cand == neigh)
                         continue;
                     if (isMarkedDeleted(cand)) {
-                        std::cout << "deleted one" << std::endl; // for debuging
                         continue;
                     }
 
