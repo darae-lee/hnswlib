@@ -446,7 +446,7 @@ class HierarchicalNSW : public AlgorithmInterface<dist_t> {
             return;
         }
 
-        float alpha = 1.2;
+        float alpha = 0.85;
         std::priority_queue<std::pair<dist_t, tableint>> queue_closest;
         std::vector<std::pair<dist_t, tableint>> return_list;
         while (top_candidates.size() > 0) {
