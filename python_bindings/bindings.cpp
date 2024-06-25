@@ -709,7 +709,7 @@ class Index {
             if (internal_id == -1) {
                 throw std::runtime_error("Label not found");
             }
-            appr_alg->markDelete(label);
+            // appr_alg->markDelete(label);
             auto neighbors = appr_alg->getAllNeighbors(internal_id);
             all_neighbors.insert(neighbors.begin(), neighbors.end());
         }
